@@ -42,33 +42,57 @@ CertUtil: -importPFX command completed successfully.
 ...
 ```
 
-### Close a window by name
+### Open a file in notepad, edit, save and exit
 
 `Dockerfile`
 ```Dockerfile
 FROM mcr.microsoft.com/windows/servercore:1809
 
+USER ContainerUser
+
 RUN curl.exe -L -o nircmd-x64.zip https://www.nirsoft.net/utils/nircmd-x64.zip && mkdir nircmd && tar -xf nircmd-x64.zip -C nircmd && del nircmd-x64.zip
+
+RUN echo My Old Text > myfile.txt
+
+# cat before
+RUN type myfile.txt
+
+# 1. Open existing file in notepad (needs to be backgrounded; reason TBD)
+# 2. write new text to Text Box (consitently ID 15 via nirsoft.net GUIPropView)
+# 3. click invisible "Save" (consitently ID 3)
+# 4. close window
+# 5. Ignore nircmd exit code of 1073757860
+RUN start /B notepad.exe myfile.txt & \
+    c:\nircmd\nircmdc cmdwait 1000 win dlgsettext stitle "myfile" 15 "My New Text" & \
+    c:\nircmd\nircmdc win dlgclick stitle "myfile" 3 & \
+    c:\nircmd\nircmdc win close stitle "myfile" & \
+    exit 0
+
+# cat after
+RUN type myfile.txt
 ```
 
 Build
 ```powershell
-docker build --name nircmd .
+docker build --name nircmd-notepad-test .
 ```
 
+Output
 ```powershell
-docker run --rm -it nircmd
-C:\> notepad
-
-C:\> tasklist /fi "IMAGENAME eq notepad.exe"
-Image Name                     PID Session Name        Session#    Mem Usage 
-========================= ======== ================ =========== ============
-notepad.exe                   1388 Services                   1      8,556 K
-
-C:\> nircmd\nircmdc.exe win close stitle "Untitled"
-
-C:\> tasklist
-INFO: No tasks are running which match the specified criteria.
+...
+Step 5/7 : RUN type myfile.txt
+ ---> Running in 4986640420ff
+My Old Text 
+Removing intermediate container 4986640420ff
+ ---> 89914dc3114a
+Step 6/7 : RUN start /B notepad.exe myfile.txt &     c:\nircmd\nircmdc cmdwait 1000 win dlgsettext stitle "myfile" 15 "My New Text" &     c:\nircmd\nircmdc win dlgclick stitle "myfile" 3 &     c:\nircmd\nircmdc win close stitle "myfile" &     exit 0
+ ---> Running in 5f506be9d8f3
+Removing intermediate container 5f506be9d8f3
+ ---> 6b5a4c2d5dbf
+Step 7/7 : RUN type myfile.txt
+ ---> Running in 7f4c6e686233
+My New Text
+...
 ```
 
 ### Open then close a dialog
