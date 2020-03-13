@@ -3,6 +3,7 @@
 ## Docs
 Useful features:
 * Manipulating Windows and Dialog boxes: http://nircmd.nirsoft.net/win.html
+* For finding GUI child control IDs https://www.nirsoft.net/utils/gui_prop_view.html
 
 ## Experiments
 ### Import Root CA cert to CurrentUser/Root
@@ -58,11 +59,11 @@ RUN echo My Old Text > myfile.txt
 RUN type myfile.txt
 
 # 1. Open existing file in notepad (needs to be backgrounded; reason TBD)
-# 2. write new text to Text Box (consitently ID 15 via nirsoft.net GUIPropView)
+# 2. write new text to Text Box (consitently ID 15 via https://www.nirsoft.net/utils/gui_prop_view.html)
 # 3. click invisible "Save" (consitently ID 3)
 # 4. close window
 # 5. Ignore nircmd exit code of 1073757860
-RUN start /B notepad.exe myfile.txt & \
+RUN start /b notepad.exe myfile.txt & \
     c:\nircmd\nircmdc cmdwait 1000 win dlgsettext stitle "myfile" 15 "My New Text" & \
     c:\nircmd\nircmdc win dlgclick stitle "myfile" 3 & \
     c:\nircmd\nircmdc win close stitle "myfile" & \
